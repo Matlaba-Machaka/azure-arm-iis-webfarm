@@ -1,0 +1,248 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "location": {
+      "type": "string",
+      "defaultValue": "eastus"
+    },
+    "adminUsername": {
+      "type": "string",
+      "defaultValue": "azureadmin"
+    },
+    "adminPassword": {
+      "type": "secureString"
+    },
+    "allowedRdpSourceIp": {
+      "type": "string",
+      "metadata": {
+        "description": "Public IP in CIDR format. Example 102.123.45.67/32"
+      }
+    }
+  },
+  "variables": {
+    "vnetName": "vnet-dev-eus-01",
+    "subnetName": "snet-dev-eus-web-01",
+    "nsgName": "nsg-dev-eus-web-01",
+    "availabilitySetName": "avset-web-dev-eus-01",
+    "storageAccountName": "stcloudhubdev001",
+    "vmSize": "Standard_B2s",
+    "vmCount": 2,
+    "githubScriptUri": "https://raw.githubusercontent.com/YOURUSERNAME/YOURREPO/main/setup-iis.ps1"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Network/networkSecurityGroups",
+      "apiVersion": "2024-07-01",
+      "name": "[variables('nsgName')]",
+      "location": "[parameters('location')]",
+      "properties": {
+        "securityRules": [
+          {
+            "name": "Allow-RDP",
+            "properties": {
+              "protocol": "Tcp",
+              "sourcePortRange": "*",
+              "destinationPortRange": "3389",
+              "sourceAddressPrefix": "[parameters('allowedRdpSourceIp')]",
+              "destinationAddressPrefix": "*",
+              "access": "Allow",
+              "priority": 100,
+              "direction": "Inbound"
+            }
+          },
+          {
+            "name": "Allow-HTTP",
+            "properties": {
+              "protocol": "Tcp",
+              "sourcePortRange": "*",
+              "destinationPortRange": "80",
+              "sourceAddressPrefix": "Internet",
+              "destinationAddressPrefix": "*",
+              "access": "Allow",
+              "priority": 110,
+              "direction": "Inbound"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "Microsoft.Network/virtualNetworks",
+      "apiVersion": "2024-10-01",
+      "name": "[variables('vnetName')]",
+      "location": "[parameters('location')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/networkSecurityGroups', variables('nsgName'))]"
+      ],
+      "properties": {
+        "addressSpace": {
+          "addressPrefixes": [
+            "10.0.0.0/16"
+          ]
+        },
+        "subnets": [
+          {
+            "name": "[variables('subnetName')]",
+            "properties": {
+              "addressPrefix": "10.0.0.0/24",
+              "networkSecurityGroup": {
+                "id": "[resourceId('Microsoft.Network/networkSecurityGroups', variables('nsgName'))]"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "Microsoft.Compute/availabilitySets",
+      "apiVersion": "2024-11-01",
+      "name": "[variables('availabilitySetName')]",
+      "location": "[parameters('location')]",
+      "sku": {
+        "name": "Aligned"
+      },
+      "properties": {
+        "platformFaultDomainCount": 2,
+        "platformUpdateDomainCount": 5
+      }
+    },
+    {
+      "type": "Microsoft.Storage/storageAccounts",
+      "apiVersion": "2025-01-01",
+      "name": "[variables('storageAccountName')]",
+      "location": "[parameters('location')]",
+      "sku": {
+        "name": "Standard_LRS"
+      },
+      "kind": "StorageV2"
+    },
+    {
+      "type": "Microsoft.Network/publicIPAddresses",
+      "apiVersion": "2024-10-01",
+      "name": "[concat('pip-dev-web-', copyIndex(1))]",
+      "location": "[parameters('location')]",
+      "copy": {
+        "name": "pipLoop",
+        "count": 2
+      },
+      "sku": {
+        "name": "Standard"
+      },
+      "properties": {
+        "publicIPAllocationMethod": "Static"
+      }
+    },
+    {
+      "type": "Microsoft.Network/networkInterfaces",
+      "apiVersion": "2024-10-01",
+      "name": "[concat('nic-dev-web-', copyIndex(1))]",
+      "location": "[parameters('location')]",
+      "copy": {
+        "name": "nicLoop",
+        "count": 2
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/virtualNetworks', variables('vnetName'))]",
+        "[resourceId('Microsoft.Network/publicIPAddresses', concat('pip-dev-web-', copyIndex(1)))]"
+      ],
+      "properties": {
+        "ipConfigurations": [
+          {
+            "name": "ipconfig1",
+            "properties": {
+              "privateIPAllocationMethod": "Static",
+              "privateIPAddress": "[if(equals(copyIndex(1),1),'10.0.0.4','10.0.0.5')]",
+              "subnet": {
+                "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('vnetName'), variables('subnetName'))]"
+              },
+              "publicIPAddress": {
+                "id": "[resourceId('Microsoft.Network/publicIPAddresses', concat('pip-dev-web-', copyIndex(1)))]"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "Microsoft.Compute/virtualMachines",
+      "apiVersion": "2024-03-01",
+      "name": "[concat('vm-dev-web-', copyIndex(1))]",
+      "location": "[parameters('location')]",
+      "copy": {
+        "name": "vmLoop",
+        "count": 2
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/networkInterfaces', concat('nic-dev-web-', copyIndex(1)))]",
+        "[resourceId('Microsoft.Compute/availabilitySets', variables('availabilitySetName'))]"
+      ],
+      "properties": {
+        "hardwareProfile": {
+          "vmSize": "[variables('vmSize')]"
+        },
+        "availabilitySet": {
+          "id": "[resourceId('Microsoft.Compute/availabilitySets', variables('availabilitySetName'))]"
+        },
+        "osProfile": {
+          "computerName": "[concat('vm-dev-web-', copyIndex(1))]",
+          "adminUsername": "[parameters('adminUsername')]",
+          "adminPassword": "[parameters('adminPassword')]"
+        },
+        "storageProfile": {
+          "imageReference": {
+            "publisher": "MicrosoftWindowsServer",
+            "offer": "WindowsServer",
+            "sku": "2025-datacenter-g2",
+            "version": "latest"
+          },
+          "osDisk": {
+            "createOption": "FromImage",
+            "managedDisk": {
+              "storageAccountType": "Premium_LRS"
+            }
+          }
+        },
+        "networkProfile": {
+          "networkInterfaces": [
+            {
+              "id": "[resourceId('Microsoft.Network/networkInterfaces', concat('nic-dev-web-', copyIndex(1)))]"
+            }
+          ]
+        },
+        "diagnosticsProfile": {
+          "bootDiagnostics": {
+            "enabled": true
+          }
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Compute/virtualMachines/extensions",
+      "apiVersion": "2024-03-01",
+      "name": "[concat('vm-dev-web-', copyIndex(1), '/CustomScriptExtension')]",
+      "location": "[parameters('location')]",
+      "copy": {
+        "name": "extensionLoop",
+        "count": 2
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Compute/virtualMachines', concat('vm-dev-web-', copyIndex(1)))]"
+      ],
+      "properties": {
+        "publisher": "Microsoft.Compute",
+        "type": "CustomScriptExtension",
+        "typeHandlerVersion": "1.10",
+        "autoUpgradeMinorVersion": true,
+        "settings": {
+          "fileUris": [
+            "[variables('githubScriptUri')]"
+          ]
+        },
+        "protectedSettings": {
+          "commandToExecute": "powershell -ExecutionPolicy Bypass -File setup-iis.ps1"
+        }
+      }
+    }
+  ]
+}
