@@ -50,6 +50,9 @@ Connect using:
 Username: azureadmin
 Password: <deployment password>
 ```
+## Diagram
+
+<img width="1848" height="920" alt="Screenshot 2026-09-02 122407" src="https://github.com/user-attachments/assets/5af71b2b-71cd-40f6-80f9-30e4268a8e43" />
 
 ## Security Features
 
@@ -63,4 +66,4 @@ Password: <deployment password>
 
 Matlaba Machaka
 
-Azure Technical Operations Engineer
+Azure Operations Engineer
