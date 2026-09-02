@@ -28,7 +28,7 @@
     "storageAccountName": "stcloudhubdev001",
     "vmSize": "Standard_B2s",
     "vmCount": 2,
-    "githubScriptUri": "https://raw.githubusercontent.com/YOURUSERNAME/YOURREPO/main/setup-iis.ps1"
+    "githubScriptUri": "https://github.com/Matlaba-Machaka/azure-arm-iis-webfarm"
   },
   "resources": [
     {
