@@ -14,9 +14,12 @@ Infrastructure as Code project deploying a highly available IIS environment in M
 - Storage Account
 - IIS Installation using Custom Script Extension
 
-## Architecture
+## Solution Overview
+This solution deploys a highly available two-node IIS web environment in Microsoft Azure using ARM templates and Infrastructure as Code practices. The deployment provisions networking, security controls, compute resources, diagnostics, and automated server configuration through GitHub-hosted PowerShell scripts.
 
-![ages/architecture.png
+## Diagram
+
+<img width="1848" height="920" alt="Screenshot 2026-09-02 122407" src="https://github.com/user-attachments/assets/5af71b2b-71cd-40f6-80f9-30e4268a8e43" />
 
 ## Deployment
 
@@ -50,9 +53,6 @@ Connect using:
 Username: azureadmin
 Password: <deployment password>
 ```
-## Diagram
-
-<img width="1848" height="920" alt="Screenshot 2026-09-02 122407" src="https://github.com/user-attachments/assets/5af71b2b-71cd-40f6-80f9-30e4268a8e43" />
 
 ## Security Features
 
