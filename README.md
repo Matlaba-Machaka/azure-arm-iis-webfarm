@@ -1,69 +1,146 @@
-# Azure ARM IIS Web Farm
+## Project Overview
 
-Infrastructure as Code project deploying a highly available IIS environment in Microsoft Azure.
+This project showcases the design and deployment of a resilient Azure web platform built using Infrastructure as Code principles. The solution combines networking, security, compute, monitoring, and deployment automation to provide a production-style architecture suitable for learning, demonstrations, and portfolio purposes.
 
-## Resources Deployed
+## Key Components
 
-- Virtual Network
-- Subnet
-- Network Security Group
+### Networking
+- Virtual Network (VNet)
+- Dedicated Web Subnet
+- Network Security Group (NSG)
+- Public IP Addresses
+- Azure Load Balancer
+- Azure Application Gateway with Web Application Firewall (WAF)
+
+### Compute
 - Availability Set
-- 2 Windows Server 2025 Virtual Machines
-- 2 Public IP Addresses
-- 2 Network Interfaces
+- Two Windows Server 2025 Virtual Machines
+- IIS Web Server
+
+### Security
+- Network Security Groups
+- Restricted Administrative Access
+- Azure Bastion
+- Azure Key Vault
+- Web Application Firewall (WAF)
+
+### Monitoring & Operations
+- Azure Monitor
+- Log Analytics Workspace
+- Boot Diagnostics
 - Storage Account
-- IIS Installation using Custom Script Extension
 
-## Solution Overview
-This solution deploys a highly available two-node IIS web environment in Microsoft Azure using ARM templates and Infrastructure as Code practices. The deployment provisions networking, security controls, compute resources, diagnostics, and automated server configuration through GitHub-hosted PowerShell scripts.
+### Automation & DevOps
+- ARM Templates
+- PowerShell Configuration Scripts
+- Custom Script Extension
+- GitHub Repository Integration
+- GitHub Actions CI/CD Pipeline
 
-## Diagram
+---
 
-<img width="1848" height="920" alt="Screenshot 2026-09-02 122407" src="https://github.com/user-attachments/assets/5af71b2b-71cd-40f6-80f9-30e4268a8e43" />
+## Solution Architecture
+
+<img width="1867" height="943" alt="image" src="https://github.com/user-attachments/assets/6e23c40f-87f0-495d-87b8-c9e0a7aefe18" />
+
+---
+
+## Architecture Summary
+
+The solution leverages a layered architecture approach:
+
+```text
+Internet
+   │
+   ▼
+Application Gateway (WAF)
+   │
+   ▼
+Azure Load Balancer
+   │
+   ▼
+┌─────────────────────────────┐
+│     Availability Set        │
+├─────────────┬───────────────┤
+│ VM-WEB-01   │ VM-WEB-02     │
+│ IIS Server  │ IIS Server    │
+└─────────────┴───────────────┘
+   │
+   ▼
+Azure Monitor & Log Analytics
+
+Supporting Services
+────────────────────
+• Azure Bastion
+• Azure Key Vault
+• Storage Account
+• GitHub Actions
+• ARM Templates
+```
+
+---
 
 ## Deployment
 
-### Azure CLI
+### Deploy Using Azure CLI
 
 ```bash
 az deployment group create \
---resource-group rg-iis-demo \
---template-file azuredeploy.json \
---parameters @azuredeploy.parameters.json \
---parameters adminPassword="<Password>"
+  --resource-group rg-web-platform \
+  --template-file azuredeploy.json \
+  --parameters @azuredeploy.parameters.json \
+  --parameters adminPassword="<Password>"
 ```
 
-## Access
+---
 
-### HTTP
+## Post-Deployment Validation
 
-```text
-http://<public-ip>
-```
+Verify the following after deployment:
 
-### RDP
+- Application Gateway is online
+- Load Balancer backend pool is healthy
+- Both virtual machines are running
+- IIS website is accessible
+- Logs are flowing into Log Analytics
+- Azure Monitor is collecting metrics
+- Bastion connectivity is operational
+- NSG rules are applied correctly
 
-```text
-mstsc
-```
+---
 
-Connect using:
+## Security Controls Implemented
 
-```text
-Username: azureadmin
-Password: <deployment password>
-```
-
-## Security Features
-
-- Standard SKU Public IPs
+- Web Application Firewall (WAF)
 - Restricted RDP Access
-- Availability Set
-- Premium SSD OS Disks
-- Network Security Group
+- Azure Bastion for VM Administration
+- Azure Key Vault for Secret Management
+- Network Security Group Protection
+- Standard SKU Public IP Addresses
+- Premium SSD Managed Disks
+- Availability Set for High Availability
+
+---
+
+## Technologies Used
+
+- Microsoft Azure
+- ARM Templates
+- PowerShell
+- Windows Server 2025
+- IIS
+- Azure Monitor
+- Azure Bastion
+- Azure Key Vault
+- Azure Application Gateway
+- Azure Load Balancer
+- GitHub
+- GitHub Actions
+
+---
 
 ## Author
 
-Matlaba Machaka
-
-Azure Operations Engineer
+**Matlaba Machaka**  
+Azure Operations Engineer  
+Johannesburg, South Africa
