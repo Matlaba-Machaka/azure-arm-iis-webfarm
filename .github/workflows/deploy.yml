@@ -1,0 +1,26 @@
+name: Deploy Azure Infrastructure
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Azure Login
+      uses: azure/login@v2
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+    - name: Deploy ARM Template
+      uses: azure/arm-deploy@v2
+      with:
+        resourceGroupName: rg-secure-web
+        template: arm/azuredeploy.json
+        parameters: arm/azuredeploy.parameters.json
